@@ -5,7 +5,6 @@ import re
 from .base import ModelBase
 from fastapi import HTTPException
 
-# TODO: fix errors in validators
 """
 Pet Model
 
