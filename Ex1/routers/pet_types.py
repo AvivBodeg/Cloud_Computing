@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, HTTPException, status
 from models.pet_type import PetType
 from models.pet_type_create import PetTypeCreate
@@ -42,9 +42,39 @@ def create_pet_type(pet_type_create: PetTypeCreate):
     return pet_type
 
 @router.get("", response_model=List[PetType])
-def get_pet_types():
+def get_pet_types(
+    id: Optional[str] = None,
+    type: Optional[str] = None,
+    family: Optional[str] = None,
+    genus: Optional[str] = None,
+    lifespan: Optional[int] = None,
+    hasAttribute: Optional[str] = None
+):
     """Get all pet types"""
-    return db.get_all_pet_types()
+    pet_types = db.get_all_pet_types()
+
+    if id is not None:
+        pet_types = [pt for pt in pet_types if pt.id == id]
+
+    if type is not None:
+        pet_types = [pt for pt in pet_types if pt.type.lower() == type.lower()]
+    
+    if family is not None:
+        pet_types = [pt for pt in pet_types if pt.family.lower() == family.lower()]
+    
+    if genus is not None:
+        pet_types = [pt for pt in pet_types if pt.genus.lower() == genus.lower()]
+    
+    if lifespan is not None:
+        pet_types = [pt for pt in pet_types if pt.lifespan == lifespan]
+
+    if hasAttribute is not None:
+        pet_types = [
+            pt for pt in pet_types
+            if any(attr.lower() == hasAttribute.lower() for attr in pt.attributes)
+        ]
+
+    return pet_types
 
 @router.get("/{id}", response_model=PetType)
 def get_pet_type(id: str):
