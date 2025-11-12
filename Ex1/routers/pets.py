@@ -7,9 +7,10 @@ from database.memory_db import db
 
 router = APIRouter(prefix="/pet-types/{id}/pets", tags=["pets"])
 
-#Create a new pet under the given pet-type.
 @router.post("", response_model=Pet, status_code=status.HTTP_201_CREATED)
 def create_pet(id: str, pet_create: PetCreate):
+    """Create a new pet for a pet type"""
+    
     # Check if pet type exists
     pet_type = db.get_pet_type(id)
     if not pet_type:
@@ -45,8 +46,8 @@ def create_pet(id: str, pet_create: PetCreate):
     success = db.add_pet(id, pet)
     if not success:
         raise HTTPException(
-            status_code=500,
-            detail={"server_error": "Failed to add pet"} # TODO: change error code
+            status_code=400,
+            detail={"error": "Malformed data"}
         )
 
     # Return the created pet
@@ -93,18 +94,24 @@ def create_pet(id: str, pet_create: PetCreate):
 #     return pets_list
 
 
-# #Get a specific pet by name under the given pet-type.
-# @router.get("/{name}", response_model=Pet)
-# def get_pet(id: str, name: str):
-#     pet_type = db.get("pet_types", {}).get(id)
-#     if not pet_type:
-#         raise HTTPException(404, "pet-type not found")
+@router.get("/{name}", response_model=Pet)
+def get_pet(id: str, name: str):
+    """Get a specific pet"""
+
+    pet_type = db.get_pet_type(id)
+    if not pet_type:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "Not found"}
+        )
     
-#     pets_dict = getattr(pet_type, "pets", None) or db.get("pets_by_type", {}).get(id, {})
-#     pet = pets_dict.get(name)
-#     if not pet:
-#         raise HTTPException(404, "pet not found")
-#     return pet
+    pet = db.get_pet(id, name)
+    if not pet:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "Not found"}
+        )
+    return pet
 
 
 # #DELETE /pet-types/{id}/pets/{name}
