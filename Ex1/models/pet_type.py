@@ -1,6 +1,7 @@
 from pydantic import Field, field_validator
 from typing import List, Optional
 from .base import ModelBase
+from fastapi import HTTPException
 
 # TODO: fix errors in validators
 """
@@ -59,25 +60,37 @@ class PetType(ModelBase):
     @field_validator('id')
     def validate_id(cls, value: str) -> str:
         if not value:
-            raise ValueError("Malformed data")
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
         return value
     
     @field_validator('type')
     def validate_type(cls, value: str) -> str:
         if not value:
-            raise ValueError("Malformed data")
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
         return value
     
     @field_validator('family')
     def validate_family(cls, value: str) -> str:
         if not value:
-            raise ValueError("Malformed data")
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
         return value
 
     @field_validator('genus')
     def validate_genus(cls, value: str) -> str:
         if not value:
-            raise ValueError("Malformed data")
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
         return value
     
     @field_validator('lifespan')
@@ -85,11 +98,17 @@ class PetType(ModelBase):
         if value is None:
             return None
         if value <= 0:
-            raise ValueError("Malformed data")
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
         return value
     
     @field_validator('pets')
     def validate_unique_pet_names(cls, value: List[str]) -> List[str]:
         if len(value) != len(set(value)):
-            raise ValueError("Malformed data")
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
         return value

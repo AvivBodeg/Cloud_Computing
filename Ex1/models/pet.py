@@ -3,6 +3,7 @@ from typing import Union, Literal
 from datetime import datetime
 import re
 from .base import ModelBase
+from fastapi import HTTPException
 
 # TODO: fix errors in validators
 """
@@ -37,7 +38,10 @@ class Pet(ModelBase):
     @field_validator('name')
     def validate_name(cls, value: str) -> str:
         if not value:
-            raise ValueError("Malformed data")
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
         return value
 
     @field_validator('birthdate')
@@ -47,16 +51,25 @@ class Pet(ModelBase):
         try:
             pattern = r"^\d{2}-\d{2}-\d{4}$" # DD-MM-YYYY
             if not re.match(pattern, value):
-                raise ValueError("Malformed data")
+                raise HTTPException(
+                    status_code=400,
+                    detail={"error": "Malformed data"}
+                )
             datetime.strptime(value, "%d-%m-%Y") # Validate date
             return value
         except ValueError:
-            raise ValueError("Malformed data")
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
 
     @field_validator('picture')
     def validate_picture(cls, value: str) -> str:
         if value == "NA":
             return "NA"
         if not value:
-            raise ValueError("Malformed data")
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
         return value
