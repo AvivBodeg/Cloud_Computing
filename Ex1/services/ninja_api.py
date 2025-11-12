@@ -3,8 +3,15 @@ import re
 import requests
 from typing import Optional, List
 from fastapi import HTTPException
+from dotenv import load_dotenv
 
-NINJA_API_KEY = "pSgkQKYWrLDlQI0Sg3zmLQ==RrHpVdqh8aCzByaQ"
+# Load environment variables from .env file
+load_dotenv()
+
+NINJA_API_KEY = os.getenv("NINJA_API_KEY")
+
+if not NINJA_API_KEY:
+    raise ValueError("NINJA_API_KEY environment variable is required but not set")
 
 class NinjaAPIService:
     BASE_URL = "https://api.api-ninjas.com/v1/animals"

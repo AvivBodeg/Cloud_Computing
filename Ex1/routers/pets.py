@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from models.pet_type import PetType
-from models.pet_create import PetTypeCreate
+from models.pet_create import PetCreate
 from models.pet import Pet
 from database.memory_db import db
 
@@ -8,8 +8,9 @@ from database.memory_db import db
 router = APIRouter(prefix="/pet-types/{id}/pets", tags=["pets"])
 
 #Create a new pet under the given pet-type.
-@router.post("", response_model=PetType, status_code=status.HTTP_201_CREATED)
-def create_pet(id: str, pet_create: PetTypeCreate):
+@router.post("", response_model=Pet, status_code=status.HTTP_201_CREATED)
+def create_pet(id: str, pet_create: PetCreate):
+    # Check if pet type exists
     pet_type = db.get_pet_type(id)
     if not pet_type:
         raise HTTPException(
@@ -17,20 +18,38 @@ def create_pet(id: str, pet_create: PetTypeCreate):
             detail={"error": "Not found"}
         )
     
+    # Check if pet already exists
     if db.pet_exists(id, pet_create.name):
         raise HTTPException(
             status_code=400,
             detail={"error": "Malformed data"}
         )
     
-    pet=Pet(
-        name=pet_create.name,
-        birthdate=pet_create.birthday or "NA",
-        picture=pet_create.picture or "NA"
-    )
+    birthdate = pet_create.birthdate or "NA"
+    picture = pet_create.picture or "NA"
+    #TODO: get and verify picture
 
-    db.add_pet(id, pet)
+    try:
+        pet = Pet(
+            name=pet_create.name,
+            birthdate=birthdate,
+            picture=picture
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Malformed data"}
+        )
 
+    # Add the pet to the database
+    success = db.add_pet(id, pet)
+    if not success:
+        raise HTTPException(
+            status_code=500,
+            detail={"server_error": "Failed to add pet"} # TODO: change error code
+        )
+
+    # Return the created pet
     return pet
 
 # #List all pets for the given pet-type.

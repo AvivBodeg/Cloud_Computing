@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
-class PetTypeCreate(BaseModel):
+class PetCreate(BaseModel):
     name: str
-    birthday: Optional[str]
-    picture: Optional[str]
+    birthdate: Optional[str] = None
+    picture: Optional[str] = None
