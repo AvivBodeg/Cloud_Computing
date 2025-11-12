@@ -21,7 +21,6 @@ def create_pet_type(pet_type_create: PetTypeCreate):
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(str(e))
         raise HTTPException(
             status_code=500,
             detail={"server_error": str(e)}

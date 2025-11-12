@@ -45,6 +45,7 @@ class Pet(ModelBase):
 
     @field_validator('birthdate')
     def validate_birthdate(cls, value: str) -> str:
+        return value
         if value == "NA":
             return "NA"
         try:
@@ -64,6 +65,7 @@ class Pet(ModelBase):
 
     @field_validator('picture')
     def validate_picture(cls, value: str) -> str:
+        return value
         if value == "NA":
             return "NA"
         if not value:
