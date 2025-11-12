@@ -45,8 +45,7 @@ def create_pet_type(pet_type_create: PetTypeCreate):
 @router.get("", response_model=List[PetType])
 def get_pet_types():
     """Get all pet types"""
-    # Implementation would go here
-    pass
+    return db.get_all_pet_types()
 
 @router.get("/{id}", response_model=PetType)
 def get_pet_type(id: str):
@@ -65,5 +64,17 @@ def get_pet_type(id: str):
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_pet_type(id: str):
     """Delete a specific pet type by ID"""
-    # Implementation would go here
-    pass
+    pet_type = db.get_pet_type(id)
+    if not pet_type:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "Not found"}
+        )
+
+    if pet_type.pets:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Malformed data"}
+        )
+
+    db.delete_pet_type(id)
