@@ -53,6 +53,7 @@ def get_pet_types(
     """Get all pet types"""
     pet_types = db.get_all_pet_types()
 
+    # filters
     if id is not None:
         pet_types = [pt for pt in pet_types if pt.id == id]
 
