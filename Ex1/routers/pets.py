@@ -159,30 +159,54 @@ def delete_pet(id: str, name: str):
 
     return
 
-
-
-# # PUT /pet-types/{id}/pets/{name}
-# # Update an existing pet under the given pet-type.
-# @router.put("/{name}", response_model=Pet)
-# def update_pet(id: str, name: str, payload: dict):
-#     pet_type = db.get("pet_types", {}).get(id)
-#     if not pet_type:
-#         raise HTTPException(404, "pet-type not found")
-
-#     pets_dict = getattr(pet_type, "pets", None) or db.get("pets_by_type", {}).get(id, {})
-#     if name not in pets_dict:
-#         raise HTTPException(404, "pet not found")
-
-#     try:
-#         pet = Pet(**payload)
-#     except Exception as e:
-#         raise HTTPException(400, f"invalid pet payload: {e}")
-
+@router.put("/{name}", response_model=Pet)
+def update_pet(id: str, name: str, pet_update: PetCreate):
+    """Update a pet"""
     
-#     if pet.name != name:
-#         raise HTTPException(409, "pet name in payload must match the path parameter")
+    #Check if pet type exists
+    pet_type = db.get_pet_type(id)
+    if not pet_type:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "Not found"}
+        )
+    
+    # Check if pet exists
+    existing_pet = db.get_pet(id, name)
+    if not existing_pet:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "Not found"}
+        )
+    
+    birthdate = pet_update.birthdate if pet_update.birthdate else "NA"
 
-#     pets_dict[name] = pet
-#     if hasattr(pet_type, "pets"):
-#         pet_type.pets = pets_dict
-#     return pet
+    picture = existing_pet.picture
+    if pet_update.picture:
+        try:
+            filename, image_data = ImageService.download_image(
+                pet_update.picture_url,
+                pet_update.name,
+                pet_type.type
+            )
+
+            # Delete old picture if different
+            if existing_pet.picture != "NA" and existing_pet.picture != filename:
+                db.delete_picture(existing_pet.picture)
+            
+            db.save_picture(filename, image_data)
+            picture = filename
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
+
+    updated_pet = Pet(
+            name=pet_update.name,
+            birthdate=birthdate,
+            picture=picture
+        )
+    
+    db.update_pet(id, name, updated_pet)
+    return updated_pet
