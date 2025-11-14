@@ -4,4 +4,4 @@ from typing import Optional
 class PetCreate(BaseModel):
     name: str
     birthdate: Optional[str] = None
-    picture_url: Optional[str] = None
+    picture: Optional[str] = None

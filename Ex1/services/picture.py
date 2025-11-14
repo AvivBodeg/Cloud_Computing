@@ -21,8 +21,10 @@ class ImageService:
                 )
             
             content_type = response.headers.get("Content-Type", "")
+            print(f"Content-Type received from URL: '{content_type}'")
             
             if not content_type:
+                print("No Content-Type header found in response")
                 raise HTTPException(
                     status_code=415,
                     detail={"error": "Unsupported Media Type"}
@@ -30,11 +32,13 @@ class ImageService:
             
             content_type = content_type.lower()
             
-            if "jpg" in content_type:
+            if "jpeg" in content_type or "jpg" in content_type:
                 extension = "jpg"
             elif "png" in content_type:
                 extension = "png"
             else:
+                # Debug: Print the actual content type received
+                print(f"Unsupported Content-Type received: '{content_type}'")
                 raise HTTPException(
                     status_code=415,
                     detail={"error": "Unsupported Media Type"}
@@ -55,11 +59,13 @@ class ImageService:
     @staticmethod
     def get_content_type(filename: str) -> str:
         """Get content type from filename"""
-        if filename.lower().endswith(".png"):
+        filename_lower = filename.lower()
+        if filename_lower.endswith(".png"):
             return "image/png"
-        elif filename.lower().endswith(".jpg"):
-            return "image/jpg"
+        elif filename_lower.endswith(".jpg") or filename_lower.endswith(".jpeg"):
+            return "image/jpeg"
         else:
+            print(f"Unsupported filename extension: '{filename}'")
             raise HTTPException(
                 status_code=415,
                 detail={"error": "Unsupported Media Type"}

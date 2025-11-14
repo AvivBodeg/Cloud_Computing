@@ -66,15 +66,15 @@ def create_pet(id: str, pet_create: PetCreate):
         )
 
     # Now handle picture download after pet is safely stored
-    if pet_create.picture_url and pet_create.picture_url != "NA":
+    if pet_create.picture and pet_create.picture != "NA":
         try:
             filename, image_data = ImageService.download_image(
-                pet_create.picture_url,
+                pet_create.picture,
                 pet_create.name,
                 pet_type.type
             )
             db.save_picture(filename, image_data)
-            db.save_pet_url(pet_type.type, pet_create.name, pet_create.picture_url)
+            db.save_pet_url(pet_type.type, pet_create.name, pet_create.picture)
             
             # Update the pet with the new picture filename
             updated_pet = Pet(
@@ -219,25 +219,41 @@ def update_pet(id: str, name: str, pet_update: PetCreate):
     birthdate = pet_update.birthdate if pet_update.birthdate else "NA"
 
     picture = existing_pet.picture
-    if pet_update.picture_url:
-        try:
-            filename, image_data = ImageService.download_image(
-                pet_update.picture_url,
-                pet_update.name,
-                pet_type.type
-            )
+    
+    if not pet_update.picture or pet_update.picture == "NA":
+        picture = "NA"
 
-            # Delete old picture if different
-            if existing_pet.picture != "NA" and existing_pet.picture != filename:
-                db.delete_picture(existing_pet.picture)
-            
-            db.save_picture(filename, image_data)
-            picture = filename
-        except Exception as e:
-            raise HTTPException(
-                status_code=400,
-                detail={"error": "Malformed data"}
-            )
+        db.delete_picture(existing_pet.picture)
+        db.delete_pet_url(pet_type.type, existing_pet.name)
+
+    elif pet_update.picture != "NA":
+        existing_url = db.get_pet_url(pet_type.type, existing_pet.name)
+        
+        if existing_url != pet_update.picture:
+            try:
+                filename, image_data = ImageService.download_image(
+                    pet_update.picture,
+                    pet_update.name,
+                    pet_type.type
+                )
+
+                # Delete old picture if different
+                if existing_pet.picture != "NA" and existing_pet.picture != filename:
+                    db.delete_picture(existing_pet.picture)
+                
+                # Delete old URL mapping
+                db.delete_pet_url(pet_type.type, existing_pet.name)
+                
+                db.save_picture(filename, image_data)
+                db.save_pet_url(pet_type.type, pet_update.name, pet_update.picture)
+                picture = filename
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail={"error": "Malformed data"}
+                )
 
     updated_pet = Pet(
             name=pet_update.name,
