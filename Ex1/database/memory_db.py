@@ -2,12 +2,15 @@ from .interface import DatabaseInterface
 from typing import Dict, List, Optional
 from models.pet_type import PetType
 from models.pet import Pet
+from pathlib import Path
 
 class InMemoryDatabase(DatabaseInterface):
     def __init__(self):
         self.pet_types: Dict[str, PetType] = {}
         self.pets: Dict[str, Dict[str, Pet]] = {}
-        self.pictures: Dict[str, bytes] = {}
+        self.pictures_dir = Path("pictures")
+        self.pictures_dir.mkdir(exist_ok=True)
+        self.pet_urls: Dict[tuple[str, str], str] = {}  # (pet_type, pet_name) -> url
         self.next_id = 1
         self.used_ids = set()
     
@@ -120,19 +123,44 @@ class InMemoryDatabase(DatabaseInterface):
         return False
     
     def save_picture(self, file_name: str, image_data: bytes) -> None:
-        self.pictures[file_name] = image_data
+        file_path = self.pictures_dir / file_name
+        with open(file_path, 'wb') as f:
+            f.write(image_data)
     
     def get_picture(self, file_name: str) -> Optional[bytes]:
-        return self.pictures.get(file_name)
+        file_path = self.pictures_dir / file_name
+        if file_path.exists():
+            with open(file_path, 'rb') as f:
+                return f.read()
+        return None
     
     def delete_picture(self, file_name: str) -> bool:
-        if file_name in self.pictures:
-            del self.pictures[file_name]
+        file_path = self.pictures_dir / file_name
+        if file_path.exists():
+            file_path.unlink()  # Delete the file
             return True
         return False
     
     def picture_exists(self, file_name: str) -> bool:
-        return file_name in self.pictures
+        file_path = self.pictures_dir / file_name
+        return file_path.exists()
+    
+    def get_pet_url(self, pet_type: str, pet_name: str) -> Optional[str]:
+        """Get the URL used by a specific pet"""
+        return self.pet_urls.get((pet_type, pet_name))
+    
+    def save_pet_url(self, pet_type: str, pet_name: str, url: str) -> None:
+        """Save URL for a specific pet"""
+        self.pet_urls[(pet_type, pet_name)] = url
+    
+    def delete_pet_url(self, pet_type: str, pet_name: str) -> None:
+        """Delete URL for a specific pet"""
+        if (pet_type, pet_name) in self.pet_urls:
+            del self.pet_urls[(pet_type, pet_name)]
+    
+    def url_already_used(self, url: str) -> bool:
+        """Check if any pet already uses this URL"""
+        return url in self.pet_urls.values()
 
 # Global database instance
 db = InMemoryDatabase()
