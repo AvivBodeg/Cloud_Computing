@@ -1,9 +1,9 @@
 import re
 from fastapi import APIRouter, HTTPException, status
-from models.pet_type import PetType
 from models.pet_create import PetCreate
 from models.pet import Pet
 from database.memory_db import db
+from services.picture import ImageService
 from typing import List, Optional
 from datetime import datetime
 
@@ -40,9 +40,9 @@ def create_pet(id: str, pet_create: PetCreate):
         )
     
     birthdate = pet_create.birthdate or "NA"
-    picture = pet_create.picture or "NA"
-    #TODO: get and verify picture
+    picture = "NA"
 
+    # First create the pet with default picture
     try:
         pet = Pet(
             name=pet_create.name,
@@ -50,18 +50,55 @@ def create_pet(id: str, pet_create: PetCreate):
             picture=picture
         )
     except Exception as e:
+        print("Error creating pet object:", e)
         raise HTTPException(
             status_code=400,
             detail={"error": "Malformed data"}
         )
 
-    # Add the pet to the database
+    # Add the pet to the database first
     success = db.add_pet(id, pet)
     if not success:
+        print("Failed to add pet to database")
         raise HTTPException(
             status_code=400,
             detail={"error": "Malformed data"}
         )
+
+    # Now handle picture download after pet is safely stored
+    if pet_create.picture_url and pet_create.picture_url != "NA":
+        try:
+            filename, image_data = ImageService.download_image(
+                pet_create.picture_url,
+                pet_create.name,
+                pet_type.type
+            )
+            db.save_picture(filename, image_data)
+            db.save_pet_url(pet_type.type, pet_create.name, pet_create.picture_url)
+            
+            # Update the pet with the new picture filename
+            updated_pet = Pet(
+                name=pet_create.name,
+                birthdate=birthdate,
+                picture=filename
+            )
+            db.update_pet(id, pet_create.name, updated_pet)
+            pet = updated_pet  # Return the updated pet
+            
+        except HTTPException:
+            print("HTTPException during picture download")
+            db.delete_pet(id, pet_create.name)
+            db.delete_picture(picture)
+            db.delete_pet_url(pet_type.type, pet_create.name)
+            raise
+        except Exception:
+            db.delete_pet(id, pet_create.name)
+            db.delete_picture(picture)
+            db.delete_pet_url(pet_type.type, pet_create.name)
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Malformed data"}
+            )
 
     # Return the created pet
     return pet
@@ -182,7 +219,7 @@ def update_pet(id: str, name: str, pet_update: PetCreate):
     birthdate = pet_update.birthdate if pet_update.birthdate else "NA"
 
     picture = existing_pet.picture
-    if pet_update.picture:
+    if pet_update.picture_url:
         try:
             filename, image_data = ImageService.download_image(
                 pet_update.picture_url,

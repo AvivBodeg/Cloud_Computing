@@ -27,6 +27,7 @@ def create_pet_type(pet_type_create: PetTypeCreate):
         )
     
     pet_type_id = db.generate_id()
+    print("Generated pet type ID:", pet_type_id)
 
     pet_type=PetType(
         id=pet_type_id,
