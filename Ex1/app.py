@@ -6,7 +6,7 @@ app = FastAPI(title="Pet Store Inventory API")
 # Include routers
 app.include_router(pet_types.router)
 app.include_router(pets.router)
-#app.include_router(pictures.router)
+app.include_router(pictures.router)
 
 @app.get("/")
 def read_root():

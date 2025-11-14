@@ -30,7 +30,7 @@ class ImageService:
             
             content_type = content_type.lower()
             
-            if "jpeg" in content_type or "jpg" in content_type:
+            if "jpg" in content_type:
                 extension = "jpg"
             elif "png" in content_type:
                 extension = "png"
@@ -57,8 +57,8 @@ class ImageService:
         """Get content type from filename"""
         if filename.lower().endswith(".png"):
             return "image/png"
-        elif filename.lower().endswith(".jpg") or filename.lower().endswith(".jpeg"):
-            return "image/jpeg"
+        elif filename.lower().endswith(".jpg"):
+            return "image/jpg"
         else:
             raise HTTPException(
                 status_code=415,
